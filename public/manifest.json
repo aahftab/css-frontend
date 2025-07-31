@@ -1,0 +1,16 @@
+{
+  "name": "CSS Frontend",
+  "short_name": "CSS App",
+  "description": "A Progressive Web App for CSS Frontend",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
