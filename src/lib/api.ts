@@ -7,8 +7,8 @@ interface LoginRequest {
 
 interface LoginResponse {
   statusCode: number
-  data: string
-  message: string | { sessionId: string }
+  data: string | { sessionId: string }
+  message: string 
   success: boolean
 }
 
@@ -42,7 +42,7 @@ export class AuthAPI {
     }
   }
 
-  static async getUserProfile(): Promise<{ name: string; username: string; email: string; location: string; avatar?: string }> {
+  static async getUserProfile(): Promise<{ name: string; username: string; email: string; avatar?: string }> {
     try {
       const response = await fetch(`${BASE_URL}/api/v1/user/profile`, {
         method: 'GET',

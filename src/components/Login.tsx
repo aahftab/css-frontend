@@ -25,13 +25,13 @@ export function Login() {
       
       if (response.success && response.statusCode === 200) {
         // Extract sessionId from message
-        const sessionId = typeof response.message === 'object' && response.message.sessionId
-          ? response.message.sessionId
+        const sessionId = typeof response.data === 'object' && response.data.sessionId
+          ? response.data.sessionId
           : ''
         
         login(sessionId)
       } else {
-        setError(response.data || 'Login failed')
+        setError(response.message || 'Login failed')
       }
     } catch (error) {
       setError('An error occurred')
