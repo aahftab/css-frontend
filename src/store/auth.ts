@@ -6,7 +6,6 @@ interface User {
   username: string
   avatar?: string
   email: string
-  location: string
 }
 
 interface AuthState {
