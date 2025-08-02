@@ -23,30 +23,35 @@ import {
 
 export function Settings() {
   const isMobile = useIsMobile();
-  const { user, setUser, logout } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const logout = useAuthStore((state) => state.logout);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!user) {
-        setIsLoading(true);
-        setError("");
+      setIsLoading(true);
+      setError("");
 
-        try {
-          const userProfile = await AuthAPI.getUserProfile();
-          setUser(userProfile);
-        } catch (err) {
-          setError("Failed to load user profile");
-          console.error("Error fetching user profile:", err);
-        } finally {
-          setIsLoading(false);
-        }
+      try {
+        const userProfile = await AuthAPI.getUserProfile();
+        
+        // Extract the actual user data from the response
+        const userData = userProfile.data?.user || userProfile;
+        
+        setUser(userData);
+      } catch (err) {
+        setError("Failed to load user profile");
+        console.error("Error fetching user profile:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUserProfile();
-  }, [user, setUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -69,23 +74,6 @@ export function Settings() {
       </div>
     );
   }
-
-  // if (error && !user) {
-  //   return (
-  //     <div className="container mx-auto p-4 max-w-4xl">
-  //       <Card className="w-full">
-  //         <CardContent className="flex items-center justify-center min-h-[200px]">
-  //           <div className="text-center space-y-2">
-  //             <p className="text-destructive">{error}</p>
-  //             <Button onClick={() => window.location.reload()} variant="outline">
-  //               Retry
-  //             </Button>
-  //           </div>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -134,25 +122,36 @@ export function Settings() {
             <CardContent>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage 
+                    src={user.avatar} 
+                    alt={user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'User'} 
+                  />
                   <AvatarFallback className="text-lg font-semibold">
-                    {user.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                    {user.firstName && user.lastName
+                      ? `${user.firstName[0]}${user.lastName[0]}`
+                      : user.firstName
+                      ? user.firstName[0]
+                      : user.username
+                      ? user.username[0].toUpperCase()
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 space-y-2">
                   <div>
-                    <h3 className="text-xl font-semibold">{user.name}</h3>
-                    <p className="text-muted-foreground">{user.username}</p>
+                    <h3 className="text-xl font-semibold">
+                      {user.firstName && user.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user.firstName || user.username || 'Unknown User'}
+                    </h3>
+                    <p className="text-muted-foreground">{user.username || 'No username'}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user.role || 'No role'}</p>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-4 w-4" />
-                      <span>{user.email}</span>
+                      <span>{user.email || 'No email'}</span>
                     </div>
                   </div>
                 </div>
