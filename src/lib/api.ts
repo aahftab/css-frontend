@@ -1,18 +1,8 @@
+import type { LoginRequest, LoginResponse, UserProfileResponse } from "@/types/api";
+
 const BASE_URL = import.meta.env.DEV
   ? ""
   : import.meta.env.VITE_BASE_URL || "http://localhost:3000";
-
-interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-interface LoginResponse {
-  statusCode: number;
-  data: string | { sessionId: string };
-  message: string;
-  success: boolean;
-}
 
 export class AuthAPI {
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -44,21 +34,7 @@ export class AuthAPI {
     }
   }
 
-  static async getUserProfile(): Promise<{
-    statusCode: number;
-    data: {
-      user: {
-        username: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-        role: string;
-        avatar?: string;
-      };
-    };
-    message: string;
-    success: boolean;
-  }> {
+  static async getUserProfile(): Promise<UserProfileResponse> {
     try {
       const response = await fetch(`${BASE_URL}/api/v1/user/profile`, {
         method: "GET",

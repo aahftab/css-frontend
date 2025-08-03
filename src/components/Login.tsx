@@ -25,11 +25,11 @@ export function Login() {
       
       if (response.success && response.statusCode === 200) {
         // Extract sessionId from message
-        const sessionId = typeof response.data === 'object' && response.data.sessionId
-          ? response.data.sessionId
-          : ''
-        
-        login(sessionId)
+        const data = typeof response.data === 'object' && response.data
+          ? response.data
+          : null
+
+        login(data)
       } else {
         setError(response.message || 'Login failed')
       }

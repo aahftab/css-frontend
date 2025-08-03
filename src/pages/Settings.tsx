@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from "@/components/mode-toogle";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthStore } from "@/store/auth";
 import { AuthAPI } from "@/lib/api";
 import {
@@ -19,28 +18,33 @@ import {
   Mail,
   LogOut,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 export function Settings() {
-  const isMobile = useIsMobile();
   const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
+  const fetchUserProfile = useAuthStore((state) => state.fetchUserProfile);
   const logout = useAuthStore((state) => state.logout);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  // Only fetch profile if user data is not present
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserProfileIfNeeded = async () => {
+      if (user) {
+        // User data already exists, no need to fetch
+        return;
+      }
+
       setIsLoading(true);
       setError("");
 
       try {
-        const userProfile = await AuthAPI.getUserProfile();
-        
-        // Extract the actual user data from the response
-        const userData = userProfile.data?.user || userProfile;
-        
-        setUser(userData);
+        const result = await fetchUserProfile();
+        if (!result.success) {
+          setError(result.error || "Failed to load user profile");
+        }
       } catch (err) {
         setError("Failed to load user profile");
         console.error("Error fetching user profile:", err);
@@ -49,9 +53,26 @@ export function Settings() {
       }
     };
 
-    fetchUserProfile();
+    fetchUserProfileIfNeeded();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleRefreshProfile = async () => {
+    setIsRefreshing(true);
+    setError("");
+
+    try {
+      const result = await fetchUserProfile();
+      if (!result.success) {
+        setError(result.error || "Failed to refresh user profile");
+      }
+    } catch (err) {
+      setError("Failed to refresh user profile");
+      console.error("Error refreshing user profile:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -84,7 +105,6 @@ export function Settings() {
           <h1 className="text-2xl font-bold">Settings</h1>
         </div>
         <div className="flex items-center gap-2">
-          {!isMobile && <ModeToggle />}
           <Button
             variant="outline"
             onClick={handleLogout}
@@ -98,16 +118,54 @@ export function Settings() {
 
       <div className="space-y-6">
         {/* Profile Section */}
-        {(!user || error) && (
+        {(!user && !isLoading && !error) && (
+          <Card className="w-full">
+            <CardContent className="flex items-center justify-center min-h-[200px]">
+              <div className="text-center space-y-4">
+                <User className="h-12 w-12 text-muted-foreground mx-auto" />
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">No Profile Data</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your profile information is not loaded. Click below to fetch your profile data.
+                  </p>
+                  <Button
+                    onClick={handleRefreshProfile}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Loading Profile...' : 'Load Profile'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {(!user || error) && isLoading && (
+          <Card className="w-full">
+            <CardContent className="flex items-center justify-center min-h-[200px]">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span>Loading profile...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {error && !isLoading && (
           <Card className="w-full">
             <CardContent className="flex items-center justify-center min-h-[200px]">
               <div className="text-center space-y-2">
                 <p className="text-destructive">{error}</p>
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={handleRefreshProfile}
                   variant="outline"
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2"
                 >
-                  Retry
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Retrying...' : 'Retry'}
                 </Button>
               </div>
             </CardContent>
@@ -116,8 +174,22 @@ export function Settings() {
         {user && (
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Your personal information</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Profile</CardTitle>
+                  <CardDescription>Your personal information</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshProfile}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -181,13 +253,7 @@ export function Settings() {
                   Choose your preferred color scheme
                 </div>
               </div>
-              {isMobile ? (
                 <ModeToggle />
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  Controlled via header button
-                </span>
-              )}
             </div>
 
             <div className="pt-4 border-t">
@@ -197,7 +263,7 @@ export function Settings() {
                   Update your personal information and preferences
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   className="flex items-center gap-2"
                 >
